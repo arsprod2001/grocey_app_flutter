@@ -190,9 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-                // Section pour les comptes de test
-                const SizedBox(height: 40),
-               
+              
               
               ],
             ),
