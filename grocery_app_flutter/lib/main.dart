@@ -16,10 +16,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Mon Application',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
       home: const AuthWrapper(),
       debugShowCheckedModeBanner: false,
     );
@@ -50,7 +47,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return _isLoggedIn 
+    return _isLoggedIn
         ? MainNavigation(onLogout: _logout)
         : LoginScreen(onLogin: _login);
   }
@@ -58,7 +55,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
 class MainNavigation extends StatefulWidget {
   final VoidCallback onLogout;
-  
+
   const MainNavigation({super.key, required this.onLogout});
 
   @override
@@ -72,13 +69,12 @@ class _MainNavigationState extends State<MainNavigation> {
     const HomeScreen(),
     const CartScreen(),
     const NotificationsScreen(),
-    ProfileScreen(), 
+    ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     _screens[3] = ProfileScreen();
-    //test
     return Scaffold(
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -86,10 +82,7 @@ class _MainNavigationState extends State<MainNavigation> {
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart),
             label: 'Panier',
@@ -98,10 +91,7 @@ class _MainNavigationState extends State<MainNavigation> {
             icon: Icon(Icons.notifications),
             label: 'Notifications',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:grocery_app_flutter/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
   final VoidCallback onLogin;
-  
+
   const SignupScreen({super.key, required this.onLogin});
 
   @override
@@ -21,7 +22,7 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  void _signup() {
+  Future<void> _signup() async {
     if (_formKey.currentState!.validate()) {
       if (_passwordController.text != _confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -37,26 +38,64 @@ class _SignupScreenState extends State<SignupScreen> {
         _isLoading = true;
       });
 
-      Future.delayed(const Duration(seconds: 2), () {
+      final emailCheck = await AuthService.checkEmailExists(
+        _emailController.text.trim(),
+      );
+
+      if (emailCheck['success'] == true && emailCheck['exists'] == true) {
         setState(() {
           _isLoading = false;
         });
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Inscription réussie !'),
+            content: Text('Cet email est déjà utilisé'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+
+      final response = await AuthService.register(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        address: _addressController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (response['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Inscription réussie'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
           ),
         );
 
+        await Future.delayed(const Duration(milliseconds: 1500));
+
         widget.onLogin();
-      });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Erreur d\'inscription'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -65,7 +104,12 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 40),
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const SizedBox(height: 20),
+
                 const Text(
                   'Inscription',
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
@@ -76,81 +120,89 @@ class _SignupScreenState extends State<SignupScreen> {
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 40),
+
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Nom complet',
-                    prefixIcon: Icon(Icons.person),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.person),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Veuillez entrer votre nom';
                     }
+                    if (value.length < 2) {
+                      return 'Le nom doit contenir au moins 2 caractères';
+                    }
                     return null;
                   },
                 ),
                 const SizedBox(height: 20),
+
                 TextFormField(
                   controller: _emailController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.email),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
                   keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer votre email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Email invalide';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 20),
+
                 TextFormField(
                   controller: _phoneController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Téléphone',
-                    prefixIcon: Icon(Icons.phone),
-                    border: OutlineInputBorder(),
+                    hintText: '+14372981700',
+                    prefixIcon: const Icon(Icons.phone),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
                   keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer votre numéro de téléphone';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 20),
+
                 TextFormField(
                   controller: _addressController,
-                  decoration: const InputDecoration(
+                  maxLines: 2,
+                  decoration: InputDecoration(
                     labelText: 'Adresse',
-                    prefixIcon: Icon(Icons.location_on),
-                    border: OutlineInputBorder(),
+                    hintText: 'Toronto',
+                    prefixIcon: const Icon(Icons.location_on),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer votre adresse';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 20),
+
                 TextFormField(
                   controller: _passwordController,
                   decoration: InputDecoration(
                     labelText: 'Mot de passe',
+                    hintText: 'Au moins 6 caractères',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility
                             : Icons.visibility_off,
+                        color: Colors.grey[600],
                       ),
                       onPressed: () {
                         setState(() {
@@ -158,30 +210,28 @@ class _SignupScreenState extends State<SignupScreen> {
                         });
                       },
                     ),
-                    border: const OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
                   obscureText: _obscurePassword,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer un mot de passe';
-                    }
-                    if (value.length < 6) {
-                      return 'Le mot de passe doit contenir au moins 6 caractères';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 20),
+
                 TextFormField(
                   controller: _confirmPasswordController,
                   decoration: InputDecoration(
                     labelText: 'Confirmer le mot de passe',
+                    hintText: 'Répétez votre mot de passe',
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirmPassword
                             ? Icons.visibility
                             : Icons.visibility_off,
+                        color: Colors.grey[600],
                       ),
                       onPressed: () {
                         setState(() {
@@ -189,32 +239,33 @@ class _SignupScreenState extends State<SignupScreen> {
                         });
                       },
                     ),
-                    border: const OutlineInputBorder(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
                   obscureText: _obscureConfirmPassword,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Veuillez confirmer votre mot de passe';
-                    }
-                    return null;
-                  },
                 ),
+
                 const SizedBox(height: 30),
+
                 SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _signup,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: Colors.blue[700],
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      elevation: 0,
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
+                            width: 24,
+                            height: 24,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation(Colors.white),
@@ -231,6 +282,22 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: Colors.grey[300])),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'Déjà inscrit ?',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: Colors.grey[300])),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -271,3 +338,4 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 }
+
